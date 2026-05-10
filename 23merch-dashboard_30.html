@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>23Merch — CRM Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #161616;
+    --border: #222222;
+    --accent: #c8ff00;
+    --accent2: #ff4444;
+    --accent3: #ff9500;
+    --text: #f0f0f0;
+    --muted: #555;
+    --muted2: #333;
+    --green: #00ff88;
+    --red: #ff3333;
+    --orange: #ff9500;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID LINES BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-block {}
+  .logo {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .logo span { color: var(--text); }
+  .subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .last-update {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .last-update .time {
+    color: var(--accent);
+    display: block;
+    font-size: 14px;
+  }
+
+  .refresh-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+  .refresh-btn:hover { background: #fff; transform: translateY(-1px); }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* LOADING */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 80px;
+    color: var(--muted);
+  }
+  .loading.active { display: block; }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    display: none;
+    background: #1a0000;
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    font-size: 12px;
+  }
+  .error-msg.active { display: block; }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+  }
+
+  .kpi {
+    background: var(--surface);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+  .kpi:hover { background: var(--surface2); }
+  .kpi::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent);
+  }
+  .kpi.red::after { background: var(--red); }
+  .kpi.orange::after { background: var(--orange); }
+  .kpi.green::after { background: var(--green); }
+  .kpi.muted::after { background: var(--muted); }
+
+  .kpi-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text);
+  }
+  .kpi-value.accent { color: var(--accent); }
+  .kpi-value.red { color: var(--red); }
+  .kpi-value.orange { color: var(--orange); }
+  .kpi-value.green { color: var(--green); }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* SECTION */
+  .section-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-title .accent { color: var(--accent); }
+  .section-title .red { color: var(--red); }
+  .section-title .orange { color: var(--orange); }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  /* PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .panel-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    font-weight: 600;
+  }
+  .badge-green { background: rgba(0,255,136,0.1); color: var(--green); }
+  .badge-red { background: rgba(255,51,51,0.1); color: var(--red); }
+  .badge-orange { background: rgba(255,149,0,0.1); color: var(--orange); }
+  .badge-accent { background: rgba(200,255,0,0.1); color: var(--accent); }
+
+  /* FUNNEL */
+  .funnel { padding: 8px 0; }
+  .funnel-row {
+    display: grid;
+    grid-template-columns: 180px 60px 1fr 90px;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 12px;
+    border-bottom: 1px solid var(--muted2);
+    transition: background 0.15s;
+    cursor: default;
+  }
+  .funnel-row:hover { background: var(--surface2); }
+  .funnel-row:last-child { border-bottom: none; }
+
+  .funnel-name {
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .funnel-count {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .funnel-bar-wrap {
+    background: var(--muted2);
+    height: 6px;
+    position: relative;
+  }
+  .funnel-bar {
+    position: absolute;
+    left: 0; top: 0; height: 100%;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .funnel-sum {
+    font-size: 12px;
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* DEAL TABLE */
+  .deal-table { width: 100%; border-collapse: collapse; }
+  .deal-table th {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  .deal-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--muted2);
+    font-size: 12px;
+    vertical-align: middle;
+  }
+  .deal-table tr:last-child td { border-bottom: none; }
+  .deal-table tr:hover td { background: var(--surface2); }
+
+  .deal-title {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .deal-sum {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .deal-sum.big { color: var(--accent); }
+  .deal-sum.mid { color: var(--orange); }
+  .deal-sum.small { color: var(--text); }
+
+  .days-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .days-ok { background: rgba(0,255,136,0.1); color: var(--green); }
+  .days-warn { background: rgba(255,149,0,0.1); color: var(--orange); }
+  .days-danger { background: rgba(255,51,51,0.15); color: var(--red); }
+  .days-dead { background: rgba(255,51,51,0.25); color: var(--red); font-weight: 700; }
+
+  .mgr-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    background: var(--muted2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* MANAGER STATS */
+  .mgr-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+  .mgr-card {
+    background: var(--surface);
+    padding: 20px;
+  }
+  .mgr-name {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .mgr-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--muted2);
+    font-size: 12px;
+  }
+  .mgr-stat:last-child { border-bottom: none; }
+  .mgr-stat-label { color: var(--muted); font-size: 11px; }
+  .mgr-stat-val { font-weight: 600; }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--muted2);
+    margin-top: 12px;
+    position: relative;
+  }
+  .progress-fill {
+    position: absolute;
+    left: 0; top: 0; height: 100%;
+  }
+
+  /* ACTION LIST */
+  .action-list { padding: 16px 20px; }
+  .action-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--muted2);
+    align-items: flex-start;
+  }
+  .action-item:last-child { border-bottom: none; }
+  .action-num {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--muted2);
+    line-height: 1;
+    min-width: 28px;
+  }
+  .action-text {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .action-text strong { color: var(--accent); font-weight: 600; }
+  .action-sum {
+    margin-left: auto;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    padding-left: 12px;
+  }
+
+  /* FULL WIDTH */
+  .full-width { grid-column: 1 / -1; }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* PULSE */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .live-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+
+  /* ALERT */
+  .alert-row { background: rgba(255,51,51,0.04) !important; }
+
+  #dashboard { display: none; }
+  #dashboard.visible { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-block">
+      <div class="logo">23<span>MERCH</span></div>
+      <div class="subtitle">CRM Intelligence Dashboard · Bitrix24</div>
+    </div>
+    <div class="header-right">
+      <div class="last-update">
+        <span class="time" id="updateTime">—</span>
+        <span>последнее обновление</span>
+      </div>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadAll()">↻ ОБНОВИТЬ</button>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Загружаю данные из Bitrix24...</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip" id="kpiStrip"></div>
+
+    <!-- FUNNEL + NEAREST MONEY -->
+    <div class="main-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Воронка по этапам</div>
+          <div class="panel-badge badge-accent" id="totalDeals">—</div>
+        </div>
+        <div class="funnel" id="funnelBlock"></div>
+      </div>
+
+      <div class="panel" style="border-color:#00ff8844;box-shadow:0 0 30px rgba(0,255,136,0.05)">
+        <div class="panel-header" style="background:rgba(0,255,136,0.03);border-bottom-color:#00ff8833">
+          <div>
+            <div class="panel-title" style="color:var(--green)">💰 СМЕТА ВЫСТАВЛЕНА — БЛИЖАЙШИЕ ДЕНЬГИ</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Главный приоритет · дожать до оплаты</div>
+          </div>
+          <div>
+            <div class="panel-badge badge-green" id="prepayTotal" style="font-size:16px;padding:6px 16px">—</div>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="deal-table" id="prepayTable">
+            <thead><tr>
+              <th>Сделка</th>
+              <th>Менеджер</th>
+              <th>Сумма</th>
+              <th>Дней без активности</th>
+              <th>Статус</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICED DEALS -->
+    <div class="section-title" style="margin-bottom:16px">
+      <span style="color:#c8ff00">🔥 Выставлен счёт — ждут оплаты</span>
+    </div>
+    <div class="panel" style="margin-bottom:24px;border-color:#c8ff0033">
+      <div class="panel-header" style="background:rgba(200,255,0,0.03);border-bottom-color:#c8ff0022">
+        <div class="panel-title" style="color:#c8ff00">Счёт выставлен — деньги на подходе</div>
+        <div class="panel-badge" style="background:rgba(200,255,0,0.1);color:#c8ff00" id="invoicedTotal">—</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="deal-table" id="invoicedTable">
+          <thead><tr>
+            <th>#</th>
+            <th>Сделка</th>
+            <th>Менеджер</th>
+            <th>Сумма</th>
+            <th>Дней ожидания</th>
+            <th>Статус</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DEAD DEALS -->
+    <div class="section-title" style="margin-bottom:16px">
+      <span class="red">🚨 Зависшие сделки — «Завис»</span>
+    </div>
+    <div class="panel" style="margin-bottom:24px">
+      <div style="overflow-x:auto">
+        <table class="deal-table" id="deadTable">
+          <thead><tr>
+            <th>#</th>
+            <th>Сделка</th>
+            <th>Менеджер</th>
+            <th>Сумма</th>
+            <th>Дней без активности</th>
+            <th>Статус риска</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MANAGERS -->
+    <div class="section-title" style="margin-bottom:16px">
+      <span>Менеджеры</span>
+    </div>
+    <div class="panel full-width" style="margin-bottom:24px">
+      <div class="mgr-grid" id="mgrGrid"></div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="section-title" style="margin-bottom:16px">
+      <span class="accent">⚡ Действия на сегодня</span>
+    </div>
+    <div class="panel" style="margin-bottom:32px">
+      <div class="action-list" id="actionList"></div>
+    </div>
+
+    <!-- SHEETS URL INPUT -->
+    <div id="sheetsSetup" style="margin-bottom:24px;display:none">
+      <div class="panel" style="border-color:#4488ff44">
+        <div class="panel-header" style="background:rgba(68,136,255,0.05)">
+          <div class="panel-title" style="color:#4488ff">⚙️ Подключить Google Sheets</div>
+        </div>
+        <div style="padding:20px;display:flex;gap:12px;align-items:center">
+          <input id="sheetsUrlInput" type="text" placeholder="Вставь URL из Apps Script (Web App URL)..."
+            style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);
+                   padding:10px 14px;font-family:JetBrains Mono,monospace;font-size:12px;outline:none">
+          <button onclick="saveAndLoadSheets()"
+            style="background:#4488ff;color:#fff;border:none;padding:10px 20px;
+                   font-family:Unbounded,sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+            ПОДКЛЮЧИТЬ
+          </button>
+          <button onclick="document.getElementById('sheetsSetup').style.display='none'"
+            style="background:var(--muted2);color:var(--muted);border:none;padding:10px 16px;
+                   font-family:Unbounded,sans-serif;font-size:11px;cursor:pointer">
+            ✕
+          </button>
+        </div>
+        <div style="padding:0 20px 16px;font-size:11px;color:var(--muted)">
+          После деплоя Apps Script скопируй "Web App URL" и вставь сюда. Данные будут загружаться автоматически.
+        </div>
+      </div>
+    </div>
+
+    <!-- SHEETS ANALYTICS -->
+    <div id="sheetsBlock" style="display:none">
+      <div class="section-title" style="margin-bottom:16px">
+        <span style="color:var(--accent)">📊 Аналитика потока — Google Sheets</span>
+        <span style="font-size:10px;color:var(--muted);margin-left:8px" id="sheetsUpdated"></span>
+        <button onclick="document.getElementById('sheetsSetup').style.display='block'"
+          style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--muted);
+                 padding:3px 10px;font-size:10px;cursor:pointer;font-family:JetBrains Mono,monospace">
+          ⚙ настройки
+        </button>
+      </div>
+
+      <!-- Flow KPIs -->
+      <div class="kpi-strip" style="margin-bottom:24px" id="sheetsKpi"></div>
+
+      <!-- Weekly chart + Manager comparison -->
+      <div class="main-grid" style="margin-bottom:24px">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Недели: потенциал vs оплачено</div>
+          </div>
+          <div style="padding:16px 20px" id="weeklyChart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Менеджеры — <span id="mgrMonthLabel"></span></div>
+            <div class="panel-badge badge-accent" id="aprilTotal">—</div>
+          </div>
+          <div style="padding:0" id="mgrComparison"></div>
+        </div>
+      </div>
+
+      <!-- Daily log -->
+      <div class="panel" style="margin-bottom:24px">
+        <div class="panel-header">
+          <div class="panel-title">Дневной лог — последние 14 дней</div>
+          <div class="panel-badge badge-accent" id="dailyTotal">—</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="deal-table" id="dailyTable">
+            <thead><tr>
+              <th>Дата</th>
+              <th>Менеджер</th>
+              <th>Лиды</th>
+              <th>Канал</th>
+              <th>Сумма сделок</th>
+              <th>Ср. чек лида</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="section-title" style="margin-bottom:16px">
+      <span style="color:var(--green)">💸 Взято в работу = оплачено</span>
+    </div>
+    <div class="main-grid" style="margin-bottom:24px">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">По дням — последние 30 дней</div>
+          <div class="panel-badge badge-green" id="paidTotalBadge">—</div>
+        </div>
+        <div style="padding:16px 20px" id="paidByDayChart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Все оплаченные сделки</div>
+          <div class="panel-badge badge-green" id="paidCountBadge">—</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="deal-table" id="paidTable">
+            <thead><tr>
+              <th>Дата оплаты</th>
+              <th>Сделка</th>
+              <th>Менеджер</th>
+              <th>Сумма</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECOMMENDATIONS -->
+    <div class="section-title" style="margin-bottom:16px">
+      <span style="color:#4488ff">🧠 Экспертные рекомендации по конверсии</span>
+    </div>
+    <div class="panel" style="margin-bottom:32px">
+      <div class="action-list" id="recList">
+        <div class="action-item">
+          <div class="action-num" style="color:#4488ff22;font-size:28px">01</div>
+          <div style="flex:1">
+            <div style="margin-bottom:6px"><span style="font-size:10px;padding:2px 8px;background:#4488ff22;color:#4488ff;font-weight:700;letter-spacing:1px">КОНВЕРСИЯ · СКОРОСТЬ</span></div>
+            <div class="action-text"><strong>Правило 48 часов на смете.</strong> После отправки КП менеджер обязан позвонить в течение 48 часов — не написать, а позвонить. Первый звонок: «Получили смету? Есть вопросы?» Второй звонок через 5 дней: «Что мешает принять решение?» Без этого правила смета превращается в отправленный файл без ответственного.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-num" style="color:#4488ff22;font-size:28px">02</div>
+          <div style="flex:1">
+            <div style="margin-bottom:6px"><span style="font-size:10px;padding:2px 8px;background:#4488ff22;color:#4488ff;font-weight:700;letter-spacing:1px">КОНВЕРСИЯ · ДЕДЛАЙН</span></div>
+            <div class="action-text"><strong>Искусственный дедлайн на цену.</strong> В каждой смете должна быть фраза: «Цена действительна до [дата + 14 дней] — после этого пересчёт из-за курса и загрузки производства». Это не манипуляция — это правда вашего бизнеса. Дедлайн конвертирует «подумаю» в решение.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-num" style="color:#4488ff22;font-size:28px">03</div>
+          <div style="flex:1">
+            <div style="margin-bottom:6px"><span style="font-size:10px;padding:2px 8px;background:#4488ff22;color:#4488ff;font-weight:700;letter-spacing:1px">КОНВЕРСИЯ · ВОЗРАЖЕНИЯ</span></div>
+            <div class="action-text"><strong>Карта возражений на этапе сметы.</strong> Менеджеры сейчас не фиксируют причину зависания. Добавить обязательное поле в Битрикс: «Почему не платят?» — дорого / не согласовали внутри / выбирают между нами и конкурентом / нет бюджета / пропали. Каждая причина требует разного действия. Сейчас все 14 сделок на смете ведутся одинаково — это ошибка.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-num" style="color:#4488ff22;font-size:28px">04</div>
+          <div style="flex:1">
+            <div style="margin-bottom:6px"><span style="font-size:10px;padding:2px 8px;background:#4488ff22;color:#4488ff;font-weight:700;letter-spacing:1px">КОНВЕРСИЯ · КВАЛИФИКАЦИЯ</span></div>
+            <div class="action-text"><strong>Квалификация до КП, а не после.</strong> 360 сделок в воронке — большинство из них никогда не станут деньгами. До расчёта сметы менеджер должен выяснить: есть ли бюджет, есть ли ЛПР в контакте, есть ли дедлайн у клиента. Без этого вы считаете КП для тех, кто просто «интересуется». Это съедает время и засоряет воронку.</div>
+          </div>
+        </div>
+        <div class="action-item">
+          <div class="action-num" style="color:#4488ff22;font-size:28px">05</div>
+          <div style="flex:1">
+            <div style="margin-bottom:6px"><span style="font-size:10px;padding:2px 8px;background:#4488ff22;color:#4488ff;font-weight:700;letter-spacing:1px">КОНВЕРСИЯ · РЕАКТИВАЦИЯ</span></div>
+            <div class="action-text"><strong>Массовая реактивация по «Завис».</strong> Раз в месяц — рассылка по всем зависшим: «У нас новые образцы / сезонная акция / изменились сроки производства». Не продающее письмо — информационный повод для контакта. 5-10% мертвых сделок возвращаются именно так. При вашем объёме (71+ млн в «Завис») даже 5% — это 3,5 млн.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div><span class="live-dot"></span>Live · 23Merch CRM Dashboard</div>
+      <div>API: 23friends.bitrix24.ru · Данные загружены из Bitrix24 REST API</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API_BASE = 'https://23friends.bitrix24.ru/rest/9/a0mi9rrlz1qjc9pu';
+
+// Google Sheets JSON URL — вставь свой после деплоя Apps Script
+let SHEETS_URL = localStorage.getItem('sheetsUrl') || '';
+let sheetsData = null;
+
+const STAGES = {
+  'UC_LUZJ27': 'Рабочие чаты',
+  'NEW': 'Новый лид',
+  'PREPARATION': 'Просчёт сметы',
+  'PREPAYMENT_INVOICE': 'Смета выставлена (думает)',
+  'UC_S55Q66': 'Выставлен счёт',
+  'EXECUTING': 'В работе',
+  'UC_7DTI3K': 'Завис',
+};
+
+const STAGE_ORDER = ['NEW','PREPARATION','PREPAYMENT_INVOICE','UC_S55Q66','EXECUTING','UC_7DTI3K','UC_LUZJ27'];
+
+const MGR_NAMES = {
+  '921': 'Екатерина Калмыкова',
+  '3145': 'Дарья Тимофеева',
+  '25': 'Марина Крылова',
+  '1': 'Тимур Абдуллаев',
+  '3547': 'Максим Щукин',
+};
+
+const FIRED_MANAGERS = ['25'];
+const UNASSIGNED = ['1', '3547', '25'];
+const HIDE_FROM_MGR_CARDS = ['1', '3547'];
+
+const STAGE_COLORS = {
+  'NEW': '#4488ff',
+  'PREPARATION': '#aa88ff',
+  'PREPAYMENT_INVOICE': '#00ff88',
+  'UC_S55Q66': '#c8ff00',
+  'EXECUTING': '#ff9500',
+  'UC_7DTI3K': '#ff6600',
+  'UC_LUZJ27': '#555555',
+};
+
+function fmt(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1) + ' млн';
+  if (n >= 1e3) return (n/1e3).toFixed(0) + ' тыс';
+  return n.toFixed(0);
+}
+
+function fmtFull(n) {
+  return new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+}
+
+function daysSince(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return Math.floor((now - d) / 86400000);
+}
+
+function daysClass(days) {
+  if (days <= 7) return 'days-ok';
+  if (days <= 14) return 'days-warn';
+  if (days <= 30) return 'days-danger';
+  return 'days-dead';
+}
+
+function riskLabel(days) {
+  if (days <= 7) return '✓ Свежая';
+  if (days <= 14) return '⚠ Позвонить';
+  if (days <= 30) return '🔴 Реанимация';
+  return '💀 Закрывать';
+}
+
+function sumClass(n) {
+  if (n >= 3e6) return 'big';
+  if (n >= 1e6) return 'mid';
+  return 'small';
+}
+
+async function fetchExecuting() {
+  const url = `${API_BASE}/crm.deal.list.json?filter[STAGE_ID]=EXECUTING` +
+    `&select[]=ID&select[]=TITLE&select[]=OPPORTUNITY&select[]=DATE_MODIFY` +
+    `&select[]=ASSIGNED_BY_ID&order[DATE_MODIFY]=DESC&start=0`;
+  const r = await fetch(url);
+  const data = await r.json();
+  return data.result || [];
+}
+
+async function fetchDeals(start = 0, acc = []) {
+  const url = `${API_BASE}/crm.deal.list.json?filter[STAGE_SEMANTIC_ID]=P&filter[CLOSED]=N` +
+    `&select[]=ID&select[]=TITLE&select[]=OPPORTUNITY&select[]=STAGE_ID` +
+    `&select[]=ASSIGNED_BY_ID&select[]=DATE_MODIFY&order[OPPORTUNITY]=DESC&start=${start}`;
+  const r = await fetch(url);
+  const data = await r.json();
+  acc = acc.concat(data.result);
+  if (data.next && acc.length < 300) {
+    return fetchDeals(data.next, acc);
+  }
+  return acc;
+}
+
+function buildKPI(deals) {
+  const total = deals.length;
+  const totalSum = deals.reduce((s, d) => s + parseFloat(d.OPPORTUNITY), 0);
+  const prepay = deals.filter(d => d.STAGE_ID === 'PREPAYMENT_INVOICE');
+  const prepaySum = prepay.reduce((s, d) => s + parseFloat(d.OPPORTUNITY), 0);
+  const noAns = deals.filter(d => d.STAGE_ID === 'UC_7DTI3K');
+  const noAnsSum = noAns.reduce((s, d) => s + parseFloat(d.OPPORTUNITY), 0);
+  const dead = noAns.filter(d => daysSince(d.DATE_MODIFY) > 30);
+  const deadSum = dead.reduce((s, d) => s + parseFloat(d.OPPORTUNITY), 0);
+
+  document.getElementById('kpiStrip').innerHTML = `
+    <div class="kpi green">
+      <div class="kpi-label">В воронке всего</div>
+      <div class="kpi-value green">${fmt(totalSum)}</div>
+      <div class="kpi-sub">${total} сделок</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Смета выставлена</div>
+      <div class="kpi-value accent">${fmt(prepaySum)}</div>
+      <div class="kpi-sub">${prepay.length} сделок · ближайшие деньги</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Завис</div>
+      <div class="kpi-value red">${fmt(noAnsSum)}</div>
+      <div class="kpi-sub">${noAns.length} сделок (${Math.round(noAns.length/total*100)}% воронки)</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Мёртвые (30+ дней)</div>
+      <div class="kpi-value red">${fmt(deadSum)}</div>
+      <div class="kpi-sub">${dead.length} сделок без активности</div>
+    </div>
+    <div class="kpi orange">
+      <div class="kpi-label">Средний чек</div>
+      <div class="kpi-value orange">${fmt(totalSum/total)}</div>
+      <div class="kpi-sub">по всем открытым</div>
+    </div>
+  `;
+}
+
+function buildFunnel(deals) {
+  const stats = {};
+  STAGE_ORDER.forEach(s => { stats[s] = { count: 0, sum: 0 }; });
+  deals.forEach(d => {
+    if (stats[d.STAGE_ID]) {
+      stats[d.STAGE_ID].count++;
+      stats[d.STAGE_ID].sum += parseFloat(d.OPPORTUNITY);
+    }
+  });
+  const maxSum = Math.max(...Object.values(stats).map(v => v.sum));
+
+  document.getElementById('totalDeals').textContent = `${deals.length} сделок`;
+  document.getElementById('funnelBlock').innerHTML = STAGE_ORDER
+    .filter(s => stats[s].count > 0)
+    .map(s => {
+      const v = stats[s];
+      const pct = maxSum > 0 ? (v.sum / maxSum * 100) : 0;
+      const color = STAGE_COLORS[s] || '#555';
+      return `<div class="funnel-row">
+        <div class="funnel-name">${STAGES[s]}</div>
+        <div class="funnel-count" style="color:${color}">${v.count}</div>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <div class="funnel-sum" style="color:${color}">${fmt(v.sum)}</div>
+      </div>`;
+    }).join('');
+}
+
+function buildPrepay(deals) {
+  const prepay = deals
+    .filter(d => d.STAGE_ID === 'PREPAYMENT_INVOICE')
+    .sort((a, b) => parseFloat(b.OPPORTUNITY) - parseFloat(a.OPPORTUNITY));
+
+  const total = prepay.reduce((s, d) => s + parseFloat(d.OPPORTUNITY), 0);
+  document.getElementById('prepayTotal').textContent = fmt(total);
+
+  const tbody = document.querySelector('#prepayTable tbody');
+  tbody.innerHTML = prepay.map(d => {
+    const days = daysSince(d.DATE_MODIFY);
+    const opp = parseFloat(d.OPPORTUNITY);
+    return `<tr${days > 14 ? ' class="alert-row"' : ''}>
+      <td><div class="deal-title">${d.TITLE}</div></td>
+      <td><span class="mgr-badge">${MGR_NAMES[d.ASSIGNED_BY_ID] || d.ASSIGNED_BY_ID}</span></td>
+      <td><span class="deal-sum ${sumClass(opp)}">${fmt(opp)}</span></td>
+      <td><span class="days-badge ${daysClass(days)}">${days} дн</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function buildInvoiced(deals) {
+  const invoiced = deals
+    .filter(d => d.STAGE_ID === 'UC_S55Q66')
+    .sort((a, b) => parseFloat(b.OPPORTUNITY) - parseFloat(a.OPPORTUNITY));
+
+  const total = invoiced.reduce((s, d) => s + parseFloat(d.OPPORTUNITY), 0);
+  document.getElementById('invoicedTotal').textContent = invoiced.length > 0
+    ? fmt(total) + ' · ' + invoiced.length + ' сд'
+    : 'пусто';
+
+  const tbody = document.querySelector('#invoicedTable tbody');
+  if (invoiced.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Сделок на этапе нет</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = invoiced.map((d, i) => {
+    const days = daysSince(d.DATE_MODIFY);
+    const opp = parseFloat(d.OPPORTUNITY);
+    let status, statusColor;
+    if (days <= 3) { status = '✓ Только выставлен'; statusColor = 'var(--green)'; }
+    else if (days <= 7) { status = '⚡ Напомнить'; statusColor = 'var(--accent)'; }
+    else if (days <= 14) { status = '⚠ Позвонить'; statusColor = 'var(--orange)'; }
+    else { status = '🔴 Срочно'; statusColor = 'var(--red)'; }
+
+    return `<tr style="${days > 7 ? 'background:rgba(200,255,0,0.02)' : ''}">
+      <td style="color:var(--muted);font-size:11px">${i+1}</td>
+      <td><div class="deal-title" style="max-width:220px">${d.TITLE}</div></td>
+      <td><span class="mgr-badge" style="${FIRED_MANAGERS.includes(d.ASSIGNED_BY_ID) ? 'background:rgba(255,51,51,0.15);color:#ff6666' : ''}">${MGR_NAMES[d.ASSIGNED_BY_ID] || d.ASSIGNED_BY_ID}</span></td>
+      <td><span class="deal-sum ${sumClass(opp)}" style="color:#c8ff00">${fmt(opp)}</span></td>
+      <td><span class="days-badge ${daysClass(days)}">${days} дн</span></td>
+      <td style="font-size:11px;font-weight:600;color:${statusColor}">${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildDead(deals) {
+  const noAns = deals
+    .filter(d => d.STAGE_ID === 'UC_7DTI3K')
+    .sort((a, b) => parseFloat(b.OPPORTUNITY) - parseFloat(a.OPPORTUNITY))
+    .slice(0, 20);
+
+  const tbody = document.querySelector('#deadTable tbody');
+  tbody.innerHTML = noAns.map((d, i) => {
+    const days = daysSince(d.DATE_MODIFY);
+    const opp = parseFloat(d.OPPORTUNITY);
+    return `<tr${days > 30 ? ' class="alert-row"' : ''}>
+      <td style="color:var(--muted);font-size:11px">${i+1}</td>
+      <td><div class="deal-title" style="max-width:220px">${d.TITLE}</div></td>
+      <td><span class="mgr-badge">${MGR_NAMES[d.ASSIGNED_BY_ID] || d.ASSIGNED_BY_ID}</span></td>
+      <td><span class="deal-sum ${sumClass(opp)}">${fmt(opp)}</span></td>
+      <td><span class="days-badge ${daysClass(days)}">${days} дн</span></td>
+      <td style="font-size:11px">${riskLabel(days)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildManagers(deals) {
+  const mgr = {};
+  deals.forEach(d => {
+    const m = d.ASSIGNED_BY_ID;
+    if (!mgr[m]) mgr[m] = { count:0, sum:0, noAns:0, noAnsSum:0, prepay:0, prepaySum:0 };
+    mgr[m].count++;
+    mgr[m].sum += parseFloat(d.OPPORTUNITY);
+    if (d.STAGE_ID === 'UC_7DTI3K') { mgr[m].noAns++; mgr[m].noAnsSum += parseFloat(d.OPPORTUNITY); }
+    if (d.STAGE_ID === 'PREPAYMENT_INVOICE') { mgr[m].prepay++; mgr[m].prepaySum += parseFloat(d.OPPORTUNITY); }
+  });
+
+  const sorted = Object.entries(mgr).filter(([id]) => !HIDE_FROM_MGR_CARDS.includes(id)).sort((a,b) => b[1].sum - a[1].sum);
+  document.getElementById('mgrGrid').innerHTML = sorted.map(([id, v]) => {
+    const noAnsPct = Math.round(v.noAns / v.count * 100);
+    const barColor = noAnsPct > 70 ? 'var(--red)' : noAnsPct > 50 ? 'var(--orange)' : 'var(--green)';
+    return `<div class="mgr-card">
+      <div class="mgr-name" style="${FIRED_MANAGERS.includes(id) ? 'color:var(--red)' : ''}">${MGR_NAMES[id] || 'ID '+id}${FIRED_MANAGERS.includes(id) ? '<br><span style="font-size:10px;color:var(--red);font-weight:400">Сделки требуют переназначения</span>' : ''}</div>
+      <div class="mgr-stat">
+        <span class="mgr-stat-label">Сделок всего</span>
+        <span class="mgr-stat-val">${v.count}</span>
+      </div>
+      <div class="mgr-stat">
+        <span class="mgr-stat-label">Сумма портфеля</span>
+        <span class="mgr-stat-val" style="color:var(--accent)">${fmt(v.sum)}</span>
+      </div>
+      <div class="mgr-stat">
+        <span class="mgr-stat-label">На смете</span>
+        <span class="mgr-stat-val" style="color:var(--green)">${fmt(v.prepaySum)} (${v.prepay} сд)</span>
+      </div>
+      <div class="mgr-stat">
+        <span class="mgr-stat-label">Завис</span>
+        <span class="mgr-stat-val" style="color:${barColor}">${v.noAns} сд (${noAnsPct}%)</span>
+      </div>
+      <div class="mgr-stat">
+        <span class="mgr-stat-label">Сумма в "Завис"</span>
+        <span class="mgr-stat-val" style="color:var(--red)">${fmt(v.noAnsSum)}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${noAnsPct}%;background:${barColor}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildActions(deals) {
+  const prepay = deals
+    .filter(d => d.STAGE_ID === 'PREPAYMENT_INVOICE')
+    .sort((a, b) => parseFloat(b.OPPORTUNITY) - parseFloat(a.OPPORTUNITY));
+
+  const bigDead = deals
+    .filter(d => d.STAGE_ID === 'UC_7DTI3K' && daysSince(d.DATE_MODIFY) > 30)
+    .sort((a, b) => parseFloat(b.OPPORTUNITY) - parseFloat(a.OPPORTUNITY));
+
+  const items = [];
+
+  // Top prepay deals - very specific actions
+  if (prepay.length > 0) {
+    const d = prepay[0];
+    const opp = parseFloat(d.OPPORTUNITY);
+    const days = daysSince(d.DATE_MODIFY);
+    const mgr = MGR_NAMES[d.ASSIGNED_BY_ID] || d.ASSIGNED_BY_ID;
+    items.push({
+      tag: 'СРОЧНО · СЕГОДНЯ',
+      tagColor: '#ff3333',
+      text: `<strong>${d.TITLE}</strong> — ${fmt(opp)} на смете, ${days} дн без оплаты.<br>
+             Действие: позвони напрямую клиенту, не через ${mgr}.<br>
+             Вопрос клиенту: «Счёт получили — что нужно чтобы оплата прошла до конца этой недели? Есть вопросы по условиям или нужно что-то уточнить?»`,
+      sum: fmt(opp)
+    });
+  }
+
+  if (prepay.length > 1) {
+    const stalePrepay = prepay.filter(d => daysSince(d.DATE_MODIFY) > 10);
+    if (stalePrepay.length > 0) {
+      const names = stalePrepay.slice(0, 3).map(d => `${d.TITLE} (${fmt(parseFloat(d.OPPORTUNITY))})`).join(', ');
+      const totalSum = stalePrepay.reduce((s,d) => s + parseFloat(d.OPPORTUNITY), 0);
+      const mgr921 = stalePrepay.filter(d => d.ASSIGNED_BY_ID === '921');
+      const mgr3145 = stalePrepay.filter(d => d.ASSIGNED_BY_ID === '3145');
+      items.push({
+        tag: 'СЕГОДНЯ ДО 15:00',
+        tagColor: '#ff9500',
+        text: `Созвон с Екатериной и Дарьей по всем зависшим сметам (${stalePrepay.length} сделок · ${fmt(totalSum)}).<br>
+               По каждой сделке получить: статус переговоров, причину задержки оплаты, конкретную дату следующего действия.<br>
+               Формат: 15 минут на менеджера, ответы письменно в CRM после созвона.<br>
+               Вопрос менеджеру: «По каждой смете — клиент думает или ты не дожимаешь? Что конкретно сделал за последние 7 дней?»`,
+        sum: fmt(stalePrepay.reduce((s,d) => s + parseFloat(d.OPPORTUNITY), 0))
+      });
+    }
+  }
+
+  // Biggest dead deal
+  if (bigDead.length > 0) {
+    const d = bigDead[0];
+    const opp = parseFloat(d.OPPORTUNITY);
+    const days = daysSince(d.DATE_MODIFY);
+    const mgr = MGR_NAMES[d.ASSIGNED_BY_ID] || d.ASSIGNED_BY_ID;
+    items.push({
+      tag: 'РИСК ПОТЕРИ',
+      tagColor: '#ff3333',
+      text: `<strong>${d.TITLE}</strong> — ${fmt(opp)}, ${days} дн без единого касания.<br>
+             Действие: ${mgr} звонит клиенту сегодня. Скрипт: «Мы готовили для вас предложение — хотим понять, актуальна ли задача. Если да — готовы двигаться дальше, если нет — скажите прямо, чтобы не отнимать время».<br>
+             Если нет ответа после звонка — сделка закрывается с причиной "нет контакта".`,
+      sum: fmt(opp)
+    });
+  }
+
+  // Fired manager deals
+  const firedDeals = deals.filter(d => FIRED_MANAGERS.includes(d.ASSIGNED_BY_ID));
+  if (firedDeals.length > 0) {
+    const firedSum = firedDeals.reduce((s,d) => s + parseFloat(d.OPPORTUNITY), 0);
+    items.push({
+      tag: 'ПЕРЕНАЗНАЧИТЬ',
+      tagColor: '#ff9500',
+      text: `${firedDeals.length} сделок Марины Крыловой (уволена) висят без ответственного — ${fmt(firedSum)} потенциально теряется.<br>
+             Действие: прямо сейчас переназначить все сделки на Екатерину или Дарью в Битрикс24.<br>
+             После переназначения — каждый менеджер связывается с клиентом: «Ваш запрос передан мне, продолжаем работу».`,
+      sum: fmt(firedSum)
+    });
+  }
+  document.getElementById('actionList').innerHTML = items.map((item, i) => `
+    <div class="action-item">
+      <div class="action-num">0${i+1}</div>
+      <div style="flex:1">
+        <div style="margin-bottom:6px">
+          <span style="font-size:10px;padding:2px 8px;background:${item.tagColor}22;color:${item.tagColor};font-weight:700;letter-spacing:1px">${item.tag}</span>
+        </div>
+        <div class="action-text">${item.text}</div>
+      </div>
+      ${item.sum ? `<div class="action-sum">${item.sum}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function saveAndLoadSheets() {
+  const url = document.getElementById('sheetsUrlInput').value.trim();
+  if (!url) return;
+  SHEETS_URL = url;
+  localStorage.setItem('sheetsUrl', url);
+  document.getElementById('sheetsSetup').style.display = 'none';
+  loadSheets();
+}
+
+async function loadSheets() {
+  if (!SHEETS_URL) {
+    document.getElementById('sheetsSetup').style.display = 'block';
+    return;
+  }
+  try {
+    const r = await fetch(SHEETS_URL);
+    sheetsData = await r.json();
+    renderSheets(sheetsData);
+    document.getElementById('sheetsBlock').style.display = 'block';
+  } catch(e) {
+    console.warn('Sheets load failed:', e);
+    document.getElementById('sheetsSetup').style.display = 'block';
+  }
+}
+
+function renderSheets(data) {
+  // Updated time
+  if (data.updated) {
+    const d = new Date(data.updated);
+    document.getElementById('sheetsUpdated').textContent =
+      'обновлено ' + d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+  }
+
+  // Current month data
+  const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь',
+                       'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const currentMonthName = MONTH_NAMES[new Date().getMonth()];
+  const monthData = data.monthly.find(m => m.month === currentMonthName) ||
+                    data.monthly.filter(m => m.leads > 0 || m.potential > 0).slice(-1)[0] || {};
+  const monthLabel = monthData.month || currentMonthName;
+  const aprilLeads = monthData.leads || 0;
+  const aprilPotential = monthData.potential || 0;
+  const aprilPaid = monthData.paid || 0;
+  const aprilConv = monthData.conv || 0;
+  const aprilKatya = monthData.katyaPaid || 0;
+  const aprilDasha = monthData.dashaPaid || 0;
+  const katyaLeads = monthData.katyaLeads || 0;
+  const dashaLeads = monthData.dashaLeads || 0;
+  const katyaSum = monthData.katyaSum || 0;
+  const dashaSum = monthData.dashaSum || 0;
+  const leadsOrganic = monthData.leadsOrganic || 0;
+  const leadsRegular = monthData.leadsRegular || 0;
+  const ordersNew = monthData.ordersNew || 0;
+  const ordersRegular = monthData.ordersRegular || 0;
+  const regularPaid = monthData.regularPaid || 0;
+
+  // Flow KPIs setup
+
+  // Flow KPIs
+  // Conversion vs 15% plan
+  const CONV_PLAN = 15;
+  const convDisplay = aprilConv > 0 ? (aprilConv <= 1 ? aprilConv * 100 : aprilConv) : 0;
+  const convColor = convDisplay >= CONV_PLAN ? 'var(--green)' : convDisplay >= CONV_PLAN * 0.5 ? 'var(--orange)' : 'var(--red)';
+  const planPct = Math.min((convDisplay / CONV_PLAN * 100), 100).toFixed(0);
+
+  document.getElementById('sheetsKpi').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Новых лидов — ${monthLabel}</div>
+      <div class="kpi-value accent">${aprilLeads}</div>
+      <div class="kpi-sub">${leadsOrganic > 0 || leadsRegular > 0 ? 'орг. ' + leadsOrganic + ' · пост. ' + leadsRegular : 'входящих заявок'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Потенциал — ${monthLabel}</div>
+      <div class="kpi-value" style="color:#aa88ff">${fmt(aprilPotential)}</div>
+      <div class="kpi-sub">сумма всех сделок</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Оплачено — ${monthLabel}</div>
+      <div class="kpi-value green">${fmt(aprilPaid)}</div>
+      <div class="kpi-sub">${aprilPaid > 0 ? 'Катя ' + fmt(aprilKatya) + ' · Даша ' + fmt(aprilDasha) : 'оплат пока нет'}</div>
+    </div>
+    <div class="kpi" style="position:relative;overflow:hidden">
+      <div class="kpi-label">Конверсия новых лидов</div>
+      <div class="kpi-value" style="color:${convColor}">${convDisplay > 0 ? convDisplay.toFixed(1) + '%' : '0%'}</div>
+      <div class="kpi-sub" style="color:${convColor}">
+        ${convDisplay >= CONV_PLAN ? '✓ план 15% выполнен' : convDisplay === 0 ? 'план 15% · нет новых заказов' : 'план 15% · выполнено ' + planPct + '%'}
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--muted2)">
+        <div style="height:100%;width:${planPct}%;background:${convColor};transition:width 0.6s"></div>
+      </div>
+    </div>
+    <div class="kpi" style="border-left-color:#4488ff">
+      <div class="kpi-label">Постоянные клиенты</div>
+      <div class="kpi-value" style="color:#4488ff">${ordersRegular}</div>
+      <div class="kpi-sub" style="color:#4488ff">
+        ${ordersRegular > 0 ? fmt(regularPaid) + ' · ' + Math.round(ordersRegular / (ordersNew + ordersRegular) * 100) + '% от заказов' : 'повторных · не в конверсии'}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('aprilTotal').textContent = monthLabel + ' · ' + fmt(aprilPaid);
+  const mgrLabel = document.getElementById('mgrMonthLabel');
+  if (mgrLabel) mgrLabel.textContent = monthLabel;
+
+  // Manager comparison
+  const totalPaid = aprilKatya + aprilDasha;
+  document.getElementById('mgrComparison').innerHTML = `
+    ${buildMgrBar('Екатерина', katyaLeads, katyaSum, aprilKatya, totalPaid, '#00ff88')}
+    ${buildMgrBar('Дарья', dashaLeads, dashaSum, aprilDasha, totalPaid, '#c8ff00')}
+  `;
+
+  // Weekly chart
+  // Filter weeks for current month only
+  const curMonth = new Date().getMonth() + 1; // 1-12
+  const curYear = new Date().getFullYear();
+  const weeks = data.weekly.filter(w => {
+    if (!w.period) return false;
+    // period format "04.05 - 10.05" — check if month matches
+    const parts = w.period.split('-');
+    if (parts.length < 2) return false;
+    const endPart = parts[1].trim(); // "10.05"
+    const endMonth = parseInt((endPart.split('.')[1] || '0'));
+    const startPart = parts[0].trim();
+    const startMonth = parseInt((startPart.split('.')[1] || '0'));
+    return (endMonth === curMonth || startMonth === curMonth) && w.year === curYear;
+  });
+  // If no current month weeks yet, show last 6 weeks with data
+  const weeksToShow = weeks.length > 0 ? weeks : data.weekly.filter(w => w.potential > 0 || w.paid > 0).slice(-6);
+  const maxVal = Math.max(...weeksToShow.map(w => w.potential), 1);
+  document.getElementById('weeklyChart').innerHTML = weeksToShow.length === 0 ? '<div style="color:var(--muted);text-align:center;padding:40px;font-size:12px">Нет данных за текущий месяц</div>' : weeksToShow.map(w => {
+    const potPct = (w.potential / maxVal * 100).toFixed(1);
+    const paidPct = (w.paid / maxVal * 100).toFixed(1);
+    const conv = w.potential > 0 ? (w.paid / w.potential * 100).toFixed(0) : 0;
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px">
+        <span style="color:var(--muted)">${w.period}</span>
+        <span style="color:var(--muted)">${w.leads} лид · конв. <span style="color:${conv < 15 ? 'var(--red)' : 'var(--green)'}">${conv}%</span></span>
+      </div>
+      <div style="position:relative;height:8px;background:var(--muted2);margin-bottom:2px">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${potPct}%;background:#aa88ff33"></div>
+        <div style="position:absolute;left:0;top:0;height:100%;width:${paidPct}%;background:var(--green)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)">
+        <span>потенциал ${fmt(w.potential)}</span>
+        <span style="color:var(--green)">оплатили ${fmt(w.paid)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Daily log — last 14 days
+  // Filter daily for current month only
+  const curMonthStr = String(new Date().getMonth() + 1).padStart(2, '0');
+  const curYearStr = String(new Date().getFullYear());
+  const recent = data.daily.filter(r => {
+    // date format dd.mm.yyyy
+    const parts = r.date.split('.');
+    if (parts.length < 3) return false;
+    return parts[1] === curMonthStr && parts[2] === curYearStr;
+  });
+  // Group by date+manager
+  const grouped = {};
+  recent.forEach(r => {
+    const key = r.date + '|' + r.manager;
+    if (!grouped[key]) grouped[key] = { date: r.date, manager: r.manager, leads: 0, amount: 0 };
+    grouped[key].leads += r.leads;
+    grouped[key].amount += r.amount;
+  });
+  const rows = Object.values(grouped).reverse().slice(0, 20);
+  const totalLeads = rows.reduce((s, r) => s + r.leads, 0);
+  const totalAmt = rows.reduce((s, r) => s + r.amount, 0);
+  document.getElementById('dailyTotal').textContent = `${totalLeads} лидов · ${fmt(totalAmt)}`;
+
+  const tbody = document.querySelector('#dailyTable tbody');
+  tbody.innerHTML = rows.map(r => {
+    const avgCheck = r.leads > 0 && r.amount > 0 ? fmt(r.amount / r.leads) : '—';
+    const mgrColor = r.manager === 'Катя' || r.manager === 'Екатерина' ? 'var(--green)' :
+                     r.manager === 'Даша' || r.manager === 'Дарья' ? 'var(--accent)' : 'var(--muted)';
+    return `<tr>
+      <td style="color:var(--muted);font-size:12px">${r.date}</td>
+      <td><span class="mgr-badge" style="color:${mgrColor};border-left:2px solid ${mgrColor}">${r.manager}</span></td>
+      <td style="font-family:Unbounded,sans-serif;font-size:13px;font-weight:700;color:var(--text)">${r.leads}</td>
+      <td><span class="deal-sum ${sumClass(r.amount)}">${r.amount > 0 ? fmt(r.amount) : '—'}</span></td>
+      <td style="color:var(--muted);font-size:12px">${avgCheck}</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildMgrBar(name, leads, potential, paid, totalPaid, color) {
+  const pct = totalPaid > 0 ? Math.min((paid / totalPaid * 100), 100).toFixed(0) : 0;
+  const convPct = leads > 0 && potential > 0 ? (paid / potential * 100).toFixed(1) : 0;
+  const paidLabel = paid > 0 ? fmt(paid) : '—';
+  const paidSub = totalPaid > 0 ? `${pct}% от оплат команды` : 'оплат пока нет';
+  return `<div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div>
+        <span style="font-size:13px;font-weight:600;color:${color}">${name}</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">${leads} лидов · потенциал ${fmt(potential)}</span>
+      </div>
+      <span style="font-family:Unbounded,sans-serif;font-size:14px;font-weight:700;color:${paid > 0 ? color : 'var(--muted)'}">${paidLabel}</span>
+    </div>
+    <div style="height:5px;background:var(--muted2);margin:8px 0 4px">
+      <div style="height:100%;width:${pct}%;background:${color}"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted)">
+      <span>${paidSub}</span>
+      <span>конверсия ${convPct}%</span>
+    </div>
+  </div>`;
+}
+
+function buildPayments(executing) {
+  const now = new Date();
+
+  // Group by day
+  const byDay = {};
+  executing.forEach(d => {
+    const date = new Date(d.DATE_MODIFY);
+    const key = date.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'});
+    if (!byDay[key]) byDay[key] = { sum: 0, count: 0, deals: [] };
+    byDay[key].sum += parseFloat(d.OPPORTUNITY) || 0;
+    byDay[key].count++;
+    byDay[key].deals.push(d);
+  });
+
+  const totalSum = executing.reduce((s, d) => s + (parseFloat(d.OPPORTUNITY) || 0), 0);
+  const totalCount = executing.length;
+
+  document.getElementById('paidTotalBadge').textContent = fmt(totalSum);
+  document.getElementById('paidCountBadge').textContent = totalCount + ' сделок';
+
+  // Chart by day - last 30 days
+  const days = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'});
+    days.push({ key, data: byDay[key] || null });
+  }
+
+  const activeDays = days.filter(d => d.data);
+  const maxSum = Math.max(...activeDays.map(d => d.data.sum), 1);
+
+  // Show only days with data + today
+  const chartDays = activeDays;
+
+  if (chartDays.length === 0) {
+    document.getElementById('paidByDayChart').innerHTML =
+      '<div style="color:var(--muted);text-align:center;padding:40px;font-size:12px">Нет оплат за последние 30 дней</div>';
+  } else {
+    document.getElementById('paidByDayChart').innerHTML = chartDays.map(d => {
+      const pct = (d.data.sum / maxSum * 100).toFixed(1);
+      return `<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px">
+          <span style="color:var(--text);font-weight:600">${d.key}</span>
+          <span style="color:var(--green);font-weight:700">${fmt(d.data.sum)}</span>
+        </div>
+        <div style="position:relative;height:8px;background:var(--muted2)">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:var(--green)"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.data.count} сд · ${d.data.deals.map(x => MGR_NAMES[x.ASSIGNED_BY_ID] || x.ASSIGNED_BY_ID).join(', ')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Table
+  const tbody = document.querySelector('#paidTable tbody');
+  tbody.innerHTML = executing.map(d => {
+    const date = new Date(d.DATE_MODIFY);
+    const dateStr = date.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit', year:'2-digit'});
+    const opp = parseFloat(d.OPPORTUNITY) || 0;
+    return `<tr>
+      <td style="color:var(--muted);font-size:12px;white-space:nowrap">${dateStr}</td>
+      <td><div class="deal-title" style="max-width:200px">${d.TITLE}</div></td>
+      <td><span class="mgr-badge">${MGR_NAMES[d.ASSIGNED_BY_ID] || d.ASSIGNED_BY_ID}</span></td>
+      <td><span class="deal-sum ${sumClass(opp)}" style="color:var(--green)">${fmt(opp)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  const loading = document.getElementById('loading');
+  const dashboard = document.getElementById('dashboard');
+  const errMsg = document.getElementById('errorMsg');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ ЗАГРУЗКА...';
+  loading.classList.add('active');
+  dashboard.classList.remove('visible');
+  errMsg.classList.remove('active');
+
+  try {
+    const deals = await fetchDeals();
+
+    buildKPI(deals);
+    buildFunnel(deals);
+    buildPrepay(deals);
+    buildInvoiced(deals);
+    buildDead(deals);
+    buildManagers(deals);
+    buildActions(deals);
+    const executing = await fetchExecuting();
+    buildPayments(executing);
+
+    const now = new Date();
+    document.getElementById('updateTime').textContent =
+      now.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+
+    dashboard.classList.add('visible');
+    if (SHEETS_URL) loadSheets();
+    else document.getElementById('sheetsSetup').style.display = 'block';
+  } catch(e) {
+    errMsg.textContent = 'Ошибка загрузки данных: ' + e.message;
+    errMsg.classList.add('active');
+  } finally {
+    loading.classList.remove('active');
+    btn.disabled = false;
+    btn.textContent = '↻ ОБНОВИТЬ';
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
