@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мурмуризм — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f6;
+    --surface: #ffffff;
+    --surface2: #f5f0eb;
+    --border: #e8e0d8;
+    --border2: #d4c8bc;
+    --pink: #e8968a;
+    --pink-light: #f5ddd9;
+    --pink-dark: #c4635a;
+    --sage: #8a9e8a;
+    --sage-light: #e8ede8;
+    --cream: #f0e8df;
+    --text: #2a2420;
+    --text2: #6b5d54;
+    --muted: #a89890;
+    --green: #6b9e6b;
+    --red: #c4635a;
+    --gold: #b8965a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* SUBTLE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c4a898' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-block {}
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    color: var(--text);
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .logo span { color: var(--pink); }
+  .tagline {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 300;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .last-update {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    letter-spacing: 0.5px;
+  }
+  .last-update .time {
+    color: var(--pink);
+    display: block;
+    font-size: 16px;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+  }
+
+  .nav-link {
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+    transition: all 0.2s;
+  }
+  .nav-link:hover { color: var(--pink); border-color: var(--pink); }
+
+  .refresh-btn {
+    background: var(--pink);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    border-radius: 0;
+  }
+  .refresh-btn:hover { background: var(--pink-dark); }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* SETTINGS SETUP */
+  .setup-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin-bottom: 32px;
+    display: none;
+  }
+  .setup-panel.active { display: block; }
+  .setup-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .setup-field label {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .setup-field input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .setup-field input:focus { border-color: var(--pink); }
+  .setup-actions { display: flex; gap: 12px; }
+  .btn-primary {
+    background: var(--pink);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .btn-secondary {
+    background: none;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  /* LOADING */
+  .loading { display: none; text-align: center; padding: 80px; color: var(--muted); }
+  .loading.active { display: block; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 1px solid var(--border);
+    border-top-color: var(--pink);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ERROR */
+  .error-msg { display: none; background: #fff5f5; border: 1px solid #fcc; color: var(--red); padding: 16px 20px; margin-bottom: 24px; font-size: 12px; }
+  .error-msg.active { display: block; }
+
+  /* PERIOD SELECTOR */
+  .period-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+    width: fit-content;
+  }
+  .period-btn {
+    background: none;
+    border: none;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-right: 1px solid var(--border);
+  }
+  .period-btn:last-child { border-right: none; }
+  .period-btn.active { background: var(--pink); color: white; }
+  .period-btn:not(.active):hover { background: var(--surface2); color: var(--text); }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 40px;
+    border: 1px solid var(--border);
+  }
+
+  .kpi {
+    background: var(--surface);
+    padding: 24px 20px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .kpi:hover { background: var(--cream); }
+  .kpi::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 2px;
+    background: var(--pink-light);
+  }
+  .kpi.highlight::after { background: var(--pink); }
+  .kpi.positive::after { background: var(--sage); }
+  .kpi.negative::after { background: var(--red); }
+
+  .kpi-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+  .kpi-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text);
+  }
+  .kpi-value.pink { color: var(--pink); }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.red { color: var(--red); }
+  .kpi-value.gold { color: var(--gold); }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* SECTION */
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 1px;
+  }
+  .full-width { background: var(--border); margin-bottom: 1px; }
+
+  /* PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .panel-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .panel-badge {
+    font-size: 11px;
+    padding: 4px 12px;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+  .badge-pink { background: var(--pink-light); color: var(--pink-dark); }
+  .badge-sage { background: var(--sage-light); color: var(--sage); }
+  .badge-gold { background: #f5edd8; color: var(--gold); }
+
+  /* SALES BLOCKS */
+  .sales-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 32px;
+  }
+  .sales-card {
+    background: var(--surface);
+    padding: 28px 24px;
+    border: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  .sales-card:hover { background: var(--cream); }
+  .sales-icon {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .sales-channel {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .sales-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .sales-count { font-size: 12px; color: var(--muted); }
+  .sales-bar {
+    height: 2px;
+    background: var(--border);
+    margin-top: 16px;
+    position: relative;
+  }
+  .sales-bar-fill {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* FINANCE BLOCKS */
+  .finance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 32px;
+  }
+  .finance-card {
+    background: var(--surface);
+    padding: 24px;
+    border: 1px solid var(--border);
+  }
+  .finance-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .finance-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .finance-sub { font-size: 11px; color: var(--muted); }
+
+  /* TRANSACTIONS TABLE */
+  .txn-table { width: 100%; border-collapse: collapse; }
+  .txn-table th {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 12px 20px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  .txn-table td {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .txn-table tr:last-child td { border-bottom: none; }
+  .txn-table tr:hover td { background: var(--surface2); }
+
+  .txn-income { color: var(--green); font-weight: 500; }
+  .txn-outcome { color: var(--red); font-weight: 500; }
+  .txn-category {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  /* CHART */
+  .chart-bar-wrap {
+    padding: 20px 24px;
+  }
+  .chart-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 80px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .chart-label { font-size: 11px; color: var(--text2); }
+  .chart-bar-bg { background: var(--surface2); height: 6px; position: relative; }
+  .chart-bar-fill { position: absolute; left: 0; top: 0; height: 100%; transition: width 0.6s ease; }
+  .chart-val { font-size: 12px; text-align: right; color: var(--text2); font-weight: 500; }
+
+  /* SETTINGS GEAR */
+  .gear-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .gear-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  #dashboard { display: none; }
+  #dashboard.visible { display: block; }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    .container { padding: 20px 16px; }
+    .header { flex-direction: column; gap: 16px; margin-bottom: 24px; }
+    .logo { font-size: 28px; }
+    .header-right { flex-wrap: wrap; gap: 12px; }
+    .kpi-strip { grid-template-columns: 1fr 1fr; }
+    .sales-grid { grid-template-columns: 1fr; }
+    .finance-grid { grid-template-columns: 1fr; }
+    .main-grid { grid-template-columns: 1fr; }
+    .period-bar { width: 100%; }
+    .period-btn { flex: 1; padding: 10px 8px; font-size: 10px; }
+    .setup-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-block">
+      <div class="logo">Мурму<span>р</span>изм</div>
+      <div class="tagline">Sales & Finance Intelligence</div>
+    </div>
+    <div class="header-right">
+      <a href="index.html" class="nav-link">← 23Merch</a>
+      <div class="last-update">
+        <span class="time" id="updateTime">—</span>
+        <span>последнее обновление</span>
+      </div>
+      <button class="gear-btn" onclick="document.getElementById('setupPanel').classList.toggle('active')">⚙ Настройки</button>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadAll()">↻ Обновить</button>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="setup-panel" id="setupPanel">
+    <div class="setup-title">Настройки подключения</div>
+    <div class="setup-grid">
+      <div class="setup-field">
+        <label>МойСклад — токен</label>
+        <input type="password" id="msToken" placeholder="Bearer токен из МоегоСклада">
+      </div>
+      <div class="setup-field">
+        <label>Финтабло — токен</label>
+        <input type="password" id="ftToken" placeholder="Bearer токен из Финтабло">
+      </div>
+    </div>
+    <div class="setup-actions">
+      <button class="btn-primary" onclick="saveTokens()">Сохранить и загрузить</button>
+      <button class="btn-secondary" onclick="document.getElementById('setupPanel').classList.remove('active')">Отмена</button>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Загружаю данные...</div>
+  </div>
+
+  <div id="dashboard">
+
+    <!-- PERIOD SELECTOR -->
+    <div class="period-bar">
+      <button class="period-btn active" data-period="today" onclick="setPeriod('today', this)">Сегодня</button>
+      <button class="period-btn" data-period="week" onclick="setPeriod('week', this)">Неделя</button>
+      <button class="period-btn" data-period="month" onclick="setPeriod('month', this)">Месяц</button>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip" id="kpiStrip"></div>
+
+    <!-- SALES CHANNELS -->
+    <div class="section-title">Продажи по каналам</div>
+    <div class="sales-grid" id="salesGrid"></div>
+
+    <!-- FINANCE -->
+    <div class="section-title">Движение денежных средств — <span id="periodLabel" style="color:var(--pink)">сегодня</span></div>
+    <div class="finance-grid" id="financeGrid"></div>
+
+    <!-- TRANSACTIONS -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Операции</div>
+        <div id="txnBadge" class="panel-badge badge-pink">—</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="txn-table" id="txnTable">
+          <thead><tr>
+            <th>Дата</th>
+            <th>Описание</th>
+            <th>Статья</th>
+            <th>Тип</th>
+            <th style="text-align:right">Сумма</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div>Мурмуризм · Sales & Finance Dashboard</div>
+      <div id="footerSources">МойСклад + Финтабло</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+let MS_TOKEN = localStorage.getItem('ms_token') || '';
+let FT_TOKEN = localStorage.getItem('ft_token') || '';
+let currentPeriod = 'today';
+
+// ── HELPERS ──
+const fmt = n => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+const fmtShort = n => {
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(1) + ' млн';
+  if (Math.abs(n) >= 1e3) return Math.round(n/1e3) + ' тыс';
+  return Math.round(n) + ' ₽';
+};
+
+function getPeriodDates(period) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+  let from, to;
+  to = fmt(now);
+
+  if (period === 'today') {
+    from = fmt(now);
+  } else if (period === 'week') {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 6);
+    from = fmt(d);
+  } else {
+    from = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`;
+  }
+  return { from, to };
+}
+
+function setPeriod(period, btn) {
+  currentPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels = { today: 'сегодня', week: 'эта неделя', month: 'этот месяц' };
+  document.getElementById('periodLabel').textContent = labels[period];
+  loadAll();
+}
+
+function saveTokens() {
+  MS_TOKEN = document.getElementById('msToken').value.trim();
+  FT_TOKEN = document.getElementById('ftToken').value.trim();
+  localStorage.setItem('ms_token', MS_TOKEN);
+  localStorage.setItem('ft_token', FT_TOKEN);
+  document.getElementById('setupPanel').classList.remove('active');
+  loadAll();
+}
+
+// ── MOISKLAD API ──
+async function fetchMS(endpoint) {
+  const r = await fetch('https://api.moysklad.ru/api/remap/1.2' + endpoint, {
+    headers: {
+      'Authorization': 'Bearer ' + MS_TOKEN,
+      'Accept-Encoding': 'gzip',
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!r.ok) throw new Error('МойСклад: ' + r.status);
+  return r.json();
+}
+
+async function fetchOnlineOrders(from, to) {
+  // Заказы покупателей — онлайн
+  const fromDT = from + ' 00:00:00';
+  const toDT = to + ' 23:59:59';
+  const filter = `moment>=${fromDT};moment<=${toDT}`;
+  const data = await fetchMS(`/entity/customerorder?filter=${encodeURIComponent(filter)}&limit=100&order=moment,desc`);
+  return data.rows || [];
+}
+
+async function fetchRetailSales(from, to) {
+  // Розничные продажи
+  const fromDT = from + ' 00:00:00';
+  const toDT = to + ' 23:59:59';
+  const filter = `moment>=${fromDT};moment<=${toDT}`;
+  const data = await fetchMS(`/entity/retaildemand?filter=${encodeURIComponent(filter)}&limit=100&order=moment,desc`);
+  return data.rows || [];
+}
+
+// ── FINTABLO API ──
+async function fetchFT(endpoint) {
+  const r = await fetch('https://api.fintablo.ru' + endpoint, {
+    headers: { 'Authorization': 'Bearer ' + FT_TOKEN }
+  });
+  if (!r.ok) throw new Error('Финтабло: ' + r.status);
+  return r.json();
+}
+
+async function fetchTransactions(from, to) {
+  const data = await fetchFT(`/v1/transaction?dateFrom=${from}&dateTo=${to}&limit=100`);
+  return data.items || [];
+}
+
+// ── RENDER ──
+function buildKPI(online, retail, transactions) {
+  const onlineSum = online.reduce((s, o) => s + (o.sum || 0) / 100, 0);
+  const retailSum = retail.reduce((s, o) => s + (o.sum || 0) / 100, 0);
+  const totalSales = onlineSum + retailSum;
+
+  const income = transactions.filter(t => t.group === 'income').reduce((s, t) => s + (t.value || 0), 0);
+  const outcome = transactions.filter(t => t.group === 'outcome').reduce((s, t) => s + (t.value || 0), 0);
+  const balance = income - outcome;
+
+  document.getElementById('kpiStrip').innerHTML = `
+    <div class="kpi highlight">
+      <div class="kpi-label">Продажи всего</div>
+      <div class="kpi-value pink">${fmtShort(totalSales)}</div>
+      <div class="kpi-sub">${online.length + retail.length} заказов</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Онлайн</div>
+      <div class="kpi-value">${fmtShort(onlineSum)}</div>
+      <div class="kpi-sub">${online.length} заказов</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Офлайн / розница</div>
+      <div class="kpi-value">${fmtShort(retailSum)}</div>
+      <div class="kpi-sub">${retail.length} продаж</div>
+    </div>
+    <div class="kpi positive">
+      <div class="kpi-label">Приход (ДДС)</div>
+      <div class="kpi-value green">${fmtShort(income)}</div>
+      <div class="kpi-sub">${transactions.filter(t=>t.group==='income').length} операций</div>
+    </div>
+    <div class="kpi ${balance >= 0 ? 'positive' : 'negative'}">
+      <div class="kpi-label">Сальдо</div>
+      <div class="kpi-value ${balance >= 0 ? 'green' : 'red'}">${balance >= 0 ? '+' : ''}${fmtShort(balance)}</div>
+      <div class="kpi-sub">приход − расход</div>
+    </div>
+  `;
+}
+
+function buildSales(online, retail) {
+  const onlineSum = online.reduce((s, o) => s + (o.sum || 0) / 100, 0);
+  const retailSum = retail.reduce((s, o) => s + (o.sum || 0) / 100, 0);
+  const total = onlineSum + retailSum || 1;
+
+  const channels = [
+    { icon: '🌐', label: 'Онлайн', sub: 'Заказы покупателей', sum: onlineSum, count: online.length, color: '#e8968a' },
+    { icon: '🏪', label: 'Офлайн / магазин', sub: 'Розничные продажи', sum: retailSum, count: retail.length, color: '#8a9e8a' },
+  ];
+
+  document.getElementById('salesGrid').innerHTML = channels.map(c => `
+    <div class="sales-card">
+      <div class="sales-icon">${c.icon}</div>
+      <div class="sales-channel">${c.label}</div>
+      <div class="sales-amount">${fmtShort(c.sum)}</div>
+      <div class="sales-count">${c.count} ${c.label === 'Онлайн' ? 'заказов' : 'продаж'} · ${c.sub}</div>
+      <div class="sales-bar">
+        <div class="sales-bar-fill" style="width:${(c.sum/total*100).toFixed(1)}%;background:${c.color}"></div>
+      </div>
+    </div>
+    <div class="sales-card" style="background:var(--surface2)">
+      <div class="sales-icon">📊</div>
+      <div class="sales-channel">Доля канала</div>
+      <div class="sales-amount" style="color:${c.color}">${(c.sum/total*100).toFixed(0)}%</div>
+      <div class="sales-count">от общих продаж за период</div>
+      <div class="sales-bar">
+        <div class="sales-bar-fill" style="width:${(c.sum/total*100).toFixed(1)}%;background:${c.color}88"></div>
+      </div>
+    </div>
+  `).join('').replace(/<\/div>\s*<div class="sales-card" style="background:var\(--surface2\)">/,
+    '</div><div class="sales-card" style="background:var(--surface2)">');
+}
+
+function buildSalesSimple(online, retail) {
+  const onlineSum = online.reduce((s, o) => s + (o.sum || 0) / 100, 0);
+  const retailSum = retail.reduce((s, o) => s + (o.sum || 0) / 100, 0);
+  const total = onlineSum + retailSum || 1;
+
+  document.getElementById('salesGrid').innerHTML = `
+    <div class="sales-card">
+      <div class="sales-icon">🌐</div>
+      <div class="sales-channel">Онлайн</div>
+      <div class="sales-amount">${fmtShort(onlineSum)}</div>
+      <div class="sales-count">${online.length} заказов · интернет-магазин</div>
+      <div class="sales-bar"><div class="sales-bar-fill" style="width:${(onlineSum/total*100).toFixed(1)}%;background:#e8968a"></div></div>
+    </div>
+    <div class="sales-card">
+      <div class="sales-icon">🏪</div>
+      <div class="sales-channel">Офлайн / магазин</div>
+      <div class="sales-amount">${fmtShort(retailSum)}</div>
+      <div class="sales-count">${retail.length} продаж · розница</div>
+      <div class="sales-bar"><div class="sales-bar-fill" style="width:${(retailSum/total*100).toFixed(1)}%;background:#8a9e8a"></div></div>
+    </div>
+    <div class="sales-card" style="background:var(--cream)">
+      <div class="sales-icon">✦</div>
+      <div class="sales-channel">Итого</div>
+      <div class="sales-amount" style="color:var(--pink)">${fmtShort(total)}</div>
+      <div class="sales-count">${online.length + retail.length} заказов всего</div>
+      <div class="sales-bar"><div class="sales-bar-fill" style="width:100%;background:var(--pink)"></div></div>
+    </div>
+  `;
+}
+
+function buildFinance(transactions) {
+  const income = transactions.filter(t => t.group === 'income').reduce((s, t) => s + (t.value || 0), 0);
+  const outcome = transactions.filter(t => t.group === 'outcome').reduce((s, t) => s + (t.value || 0), 0);
+  const balance = income - outcome;
+
+  document.getElementById('financeGrid').innerHTML = `
+    <div class="finance-card">
+      <div class="finance-label">Сальдо</div>
+      <div class="finance-amount" style="color:${balance >= 0 ? 'var(--green)' : 'var(--red)'}">${balance >= 0 ? '+' : ''}${fmtShort(balance)}</div>
+      <div class="finance-sub">${fmt(balance)}</div>
+    </div>
+    <div class="finance-card">
+      <div class="finance-label">Приход</div>
+      <div class="finance-amount" style="color:var(--green)">+${fmtShort(income)}</div>
+      <div class="finance-sub">${transactions.filter(t=>t.group==='income').length} операций · ${fmt(income)}</div>
+    </div>
+    <div class="finance-card">
+      <div class="finance-label">Расход</div>
+      <div class="finance-amount" style="color:var(--red)">−${fmtShort(outcome)}</div>
+      <div class="finance-sub">${transactions.filter(t=>t.group==='outcome').length} операций · ${fmt(outcome)}</div>
+    </div>
+  `;
+
+  // Transactions table
+  const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20);
+  document.getElementById('txnBadge').textContent = transactions.length + ' операций';
+  const tbody = document.querySelector('#txnTable tbody');
+  if (transactions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;font-style:italic">Нет операций за период</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sorted.map(t => {
+    const isIncome = t.group === 'income';
+    const sign = isIncome ? '+' : '−';
+    const cls = isIncome ? 'txn-income' : 'txn-outcome';
+    const dateStr = t.date || '—';
+    return `<tr>
+      <td style="color:var(--muted);white-space:nowrap">${dateStr}</td>
+      <td>${t.description || t.comment || '—'}</td>
+      <td><span class="txn-category">${t.categoryName || '—'}</span></td>
+      <td><span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:${isIncome ? 'var(--green)' : 'var(--red)'}">${isIncome ? 'приход' : 'расход'}</span></td>
+      <td style="text-align:right" class="${cls}">${sign}${fmt(Math.abs(t.value || 0))}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadAll() {
+  if (!MS_TOKEN || !FT_TOKEN) {
+    document.getElementById('setupPanel').classList.add('active');
+    document.getElementById('dashboard').classList.add('visible');
+    document.getElementById('kpiStrip').innerHTML = '';
+    document.getElementById('salesGrid').innerHTML = '';
+    document.getElementById('financeGrid').innerHTML = '';
+    return;
+  }
+
+  const btn = document.getElementById('refreshBtn');
+  const loading = document.getElementById('loading');
+  const dashboard = document.getElementById('dashboard');
+  const errMsg = document.getElementById('errorMsg');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Загрузка...';
+  loading.classList.add('active');
+  dashboard.classList.remove('visible');
+  errMsg.classList.remove('active');
+
+  try {
+    const { from, to } = getPeriodDates(currentPeriod);
+
+    const [online, retail, transactions] = await Promise.all([
+      fetchOnlineOrders(from, to).catch(() => []),
+      fetchRetailSales(from, to).catch(() => []),
+      fetchTransactions(from, to).catch(() => [])
+    ]);
+
+    buildKPI(online, retail, transactions);
+    buildSalesSimple(online, retail);
+    buildFinance(transactions);
+
+    const now = new Date();
+    document.getElementById('updateTime').textContent =
+      now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+    dashboard.classList.add('visible');
+  } catch(e) {
+    errMsg.textContent = 'Ошибка: ' + e.message + '. Проверь токены в настройках.';
+    errMsg.classList.add('active');
+    dashboard.classList.add('visible');
+  } finally {
+    loading.classList.remove('active');
+    btn.disabled = false;
+    btn.textContent = '↻ Обновить';
+  }
+}
+
+// Pre-fill tokens if saved
+if (MS_TOKEN) document.getElementById('msToken').value = MS_TOKEN;
+if (FT_TOKEN) document.getElementById('ftToken').value = FT_TOKEN;
+
+loadAll();
+</script>
+</body>
+</html>
