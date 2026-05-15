@@ -1306,7 +1306,7 @@ function renderSheets(data) {
     <div class="kpi" style="position:relative;overflow:hidden">
       <div class="kpi-label">Конверсия новых лидов</div>
       <div class="kpi-value" style="color:${convColor}">${convDisplay > 0 ? convDisplay.toFixed(1) + '%' : '0%'}</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${ordersNew} заказов из ${aprilLeads} лидов</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${ordersNew} заказ из ${leadsOrganic} лидов органики</div>
       <div class="kpi-sub" style="color:${convColor}">
         ${convDisplay >= CONV_PLAN ? '✓ план 15% выполнен' : convDisplay === 0 ? 'план 15% · заказов пока нет' : 'план 15% · ' + convDisplay.toFixed(1) + '% достигнуто'}
       </div>
@@ -1327,11 +1327,30 @@ function renderSheets(data) {
   const mgrLabel = document.getElementById('mgrMonthLabel');
   if (mgrLabel) mgrLabel.textContent = monthLabel;
 
-  // Manager comparison
+  // Manager comparison - count leads from daily log for current month
   const totalPaid = aprilKatya + aprilDasha;
+  // Count leads per manager from daily data for current month
+  const curMonthNum = new Date().getMonth() + 1;
+  const curYearNum = new Date().getFullYear();
+  const mgrLeads = {};
+  const mgrPotential = {};
+  (data.daily || []).forEach(r => {
+    const parts = r.date.split('.');
+    if (parts.length < 3) return;
+    if (parseInt(parts[1]) !== curMonthNum || parseInt(parts[2]) !== curYearNum) return;
+    const m = r.manager;
+    if (!mgrLeads[m]) { mgrLeads[m] = 0; mgrPotential[m] = 0; }
+    mgrLeads[m] += r.leads;
+    mgrPotential[m] += r.amount;
+  });
+  const katyaLeadsReal = mgrLeads['Катя'] || 0;
+  const katyaSumReal = mgrPotential['Катя'] || 0;
+  const dashaLeadsReal = mgrLeads['Даша'] || 0;
+  const dashaSumReal = mgrPotential['Даша'] || 0;
+
   document.getElementById('mgrComparison').innerHTML = `
-    ${buildMgrBar('Екатерина', katyaLeads, katyaSum, aprilKatya, totalPaid, '#00ff88')}
-    ${buildMgrBar('Дарья', dashaLeads, dashaSum, aprilDasha, totalPaid, '#c8ff00')}
+    ${buildMgrBar('Екатерина', katyaLeadsReal, katyaSumReal, aprilKatya, totalPaid, '#00ff88')}
+    ${buildMgrBar('Дарья', dashaLeadsReal, dashaSumReal, aprilDasha, totalPaid, '#c8ff00')}
   `;
 
   // Weekly chart
