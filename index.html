@@ -1306,8 +1306,9 @@ function renderSheets(data) {
     <div class="kpi" style="position:relative;overflow:hidden">
       <div class="kpi-label">Конверсия новых лидов</div>
       <div class="kpi-value" style="color:${convColor}">${convDisplay > 0 ? convDisplay.toFixed(1) + '%' : '0%'}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${ordersNew} заказов из ${aprilLeads} лидов</div>
       <div class="kpi-sub" style="color:${convColor}">
-        ${convDisplay >= CONV_PLAN ? '✓ план 15% выполнен' : convDisplay === 0 ? 'план 15% · нет новых заказов' : 'план 15% · выполнено ' + planPct + '%'}
+        ${convDisplay >= CONV_PLAN ? '✓ план 15% выполнен' : convDisplay === 0 ? 'план 15% · заказов пока нет' : 'план 15% · ' + convDisplay.toFixed(1) + '% достигнуто'}
       </div>
       <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--muted2)">
         <div style="height:100%;width:${planPct}%;background:${convColor};transition:width 0.6s"></div>
